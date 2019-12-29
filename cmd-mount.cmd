@@ -1,1 +1,1 @@
-python vhdmount.py -source vhdfile-10mb.vhd -folder mount-point
+python vhdmount.py -mount -source vhdfile-10mb.vhd -folder mount-point

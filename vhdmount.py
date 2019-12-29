@@ -35,23 +35,41 @@ def diskpart_attach_vdisk(vhd_file_path:str) -> int:
     res1 = p.stdin.write(bytes("ATTACH VDISK\n", 'utf-8'))
     res1 = p.stdin.write(bytes("LIST VOLUME\n", 'utf-8'))
     stdout, stderr = p.communicate()
-    #output = stdout.decode('utf-8', errors='ignore')
     output = stdout.decode(ret_locale_lang, errors='ignore')
     last_volume_index = parse_last_volume_number(output)
+
     p.kill()
     return last_volume_index
 
+def diskpart_unmount(vhd_file_path:str, last_volume_index:int) -> bool:
+    print('running for unmount ...')
+
+    ret_locale_lang = get_locale_lang()
+    p = subprocess.Popen("diskpart", stdin=subprocess.PIPE, stdout=subprocess.PIPE, env=os.environ, )
+    res1 = p.stdin.write(bytes("SELECT VOLUME " + str(last_volume_index) + "\n", 'utf-8'))
+    res1 = p.stdin.write(bytes("REMOVE ALL DISMOUNT\n", 'utf-8'))
+
+    res1 = p.stdin.write(bytes("SELECT VDISK FILE=" + vhd_file_path + "\n", 'utf-8'))
+    res1 = p.stdin.write(bytes("DETACH VDISK\n", 'utf-8'))
+
+    stdout, stderr = p.communicate()
+    output = stdout.decode(ret_locale_lang, errors='ignore')
+    #print(output)
+
+    p.kill()
+    return True
+
 def diskpart_mount_as_folder(last_volume_index:int, mount_point_path:str) -> bool:
+    print('running for mount ...')
     ret_locale_lang = get_locale_lang()
     p = subprocess.Popen("diskpart", stdin=subprocess.PIPE, stdout=subprocess.PIPE, env=os.environ, )
     res1 = p.stdin.write(bytes("SELECT VDISK FILE=" + vhd_file_path + "\n", 'utf-8'))
     res1 = p.stdin.write(bytes("ATTACH VDISK\n", 'utf-8'))
     res1 = p.stdin.write(bytes("SELECT VOLUME " + str(last_volume_index) + "\n", 'utf-8'))
+    res1 = p.stdin.write(bytes("REMOVE ALL DISMOUNT\n", 'utf-8'))
     res1 = p.stdin.write(bytes("ASSIGN MOUNT=" + mount_point_path + "\n", 'utf-8'))
     stdout, stderr = p.communicate()
     output = stdout.decode(ret_locale_lang, errors='ignore')
-    #output = stdout.decode('utf-8', errors='ignore')
-    print(output)
 
     p.kill()
     return True
@@ -60,40 +78,56 @@ def diskpart_mount_as_folder(last_volume_index:int, mount_point_path:str) -> boo
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-source'   , help='aaaaaaaaaaaaaaaaaaaaaaa', required=True)
-    parser.add_argument('-folder'   , help='aaaaaaaaaaaaaaaaaaaaaaa', dest='folder')
-    parser.add_argument('-drive '   , help='aaaaaaaaaaaaaaaaaaaaaaa', dest='drive')
-    parser.add_argument('-mount '   , help='aaaaaaaaaaaaaaaaaaaaaaa', dest='mount')
-    parser.add_argument('-unmount ' , help='aaaaaaaaaaaaaaaaaaaaaaa', dest='unmount')
+    parser.add_argument('-mount'    , help='mount a vhd image.'         , dest='mount'  , action='store_true')
+    parser.add_argument('-unmount'  , help='unmount a vhd image.'       , dest='unmount', action='store_true')
+    parser.add_argument('-source'   , help='vhd image file location'    , required=True)
+    parser.add_argument('-folder'   , help='target mount point foler'   , dest='folder')
+    parser.add_argument('-drive '   , help='target mount disk letter'   , dest='drive')
+
 
     #args = parser.parse_args()
     args = parser.parse_args()
 
     if None == args.source:
+        print('missed -source.')
         exit(1)
 
     if not os.path.exists(args.source):
+        print('source fail not found.')
         exit(2)
 
     input_source = args.source.lower()
     if not input_source.endswith('.vhd') and not input_source.endswith('.vhdx'):
+        print('input source file extension name is not .vhd or .vhdx.')
         exit(3)
 
-    if not args.folder and  not args.drive:
+    if not args.mount and not args.unmount:
+        print('missed -mount or -unmount.')
         exit(4)
 
-    # either, can't be both
-    if args.folder and args.drive:
-        exit(5)
+    folder_path = ''
+    if args.mount:
+        if not args.folder and  not args.drive:
+            print('missed -folder or -drive.')
+            exit(5)
+
+        # either, can't be both
+        if args.folder and args.drive:
+            print('either -folder or -drive at the same time.')
+            exit(6)
+
+
+        folder_path = os.path.abspath(args.folder)
 
     vhd_file_path = os.path.abspath(args.source)
-    folder_path   = os.path.abspath(args.folder)
     last_volume_index = diskpart_attach_vdisk(vhd_file_path)
 
-    print('VHD    = ' + str(vhd_file_path))
-    print('Folder = ' + str(folder_path))
-    print('Drive  = ' + str(args.drive))
-    print('Volume = ' + str(last_volume_index))
+    print('Mount   = ' + str(args.mount))
+    print('Unmount = ' + str(args.unmount))
+    print('VHD     = ' + str(vhd_file_path))
+    print('Folder  = ' + str(folder_path))
+    print('Drive   = ' + str(args.drive))
+    print('Volume  = ' + str(last_volume_index))
 
     ret_status = False
     if args.folder:
@@ -110,7 +144,16 @@ if __name__ == '__main__':
     elif args.drive:
         ret_status = False
 
+    elif args.unmount:
+        ret_status = True
+
     if ret_status:
-        ret_status = diskpart_mount_as_folder(last_volume_index, folder_path)
+        if args.mount:
+            if args.folder:
+                ret_status = diskpart_mount_as_folder(last_volume_index, folder_path)
+            elif args.disk:
+                print('-drive option is supported now.')
+        elif args.unmount:
+            ret_status = diskpart_unmount(vhd_file_path, last_volume_index)
 
     print(ret_status)
