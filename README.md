@@ -1,10 +1,12 @@
 # py-vhdmount
-This Python program can mount/unmount VHD or VHDX virtual image as a drive or a folder on Windows.
+This Python program can mount/unmount VHD or VHDX virtual image as a drive or a folder on Windows. The main purpose of this project is helping testing jobs easier, I wanna save my time on manual testing.
 
-The main purpose of this project is helping testing jobs easier, I hate spending lots of time to do test repeatly manually.
+- This `vhdmount.py` is based on DISKPART which is an utility of Microsoft.
+- Run it as Administrator, because the requirement of DISKPART utility.
 
-## Usage
-**Help**  
+Welcome to use my code to save your time too, you can do anything you like with my source code. File bugs to me if you found something wrong, if you are more aggressive PR is appreciate.
+
+## Usage  
 There is a `vhdfile-10mb.vhd` VHD image in the `vhdfile-10mb.zip` file. You need to unzip it first to the project root folder. Then try the following examples.
 
 ```cmd
