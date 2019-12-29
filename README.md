@@ -28,5 +28,8 @@ python vhdmount.py -mount -source vhdfile-10mb.vhd -folder mount-point
 python vhdmount.py -unmount -source vhdfile-10mb.vhd
 ```
 
+![1](https://i.imgur.com/r1pPlSd.png)
+![2](https://i.imgur.com/Kg0dhgk.png)
+
 ## LICENSE
 MIT
