@@ -3,6 +3,18 @@ import os
 import re
 import argparse
 import subprocess
+import locale
+
+def get_locale_lang() ->str:
+    ret_locale = list(locale.getdefaultlocale())
+    if ret_locale[1] == 'cp950':
+        return 'Big5'
+    elif ret_locale[1] == 'cp1252':
+        return 'utf8'
+    else:
+        return 'utf8'
+
+
 
 def parse_last_volume_number(diskpart_message) -> int:
     new_diskpart_message = diskpart_message
@@ -17,25 +29,27 @@ def parse_last_volume_number(diskpart_message) -> int:
     return max_numb
 
 def diskpart_attach_vdisk(vhd_file_path:str) -> int:
+    ret_locale_lang = get_locale_lang()
     p = subprocess.Popen("diskpart", stdin=subprocess.PIPE, stdout=subprocess.PIPE, env=os.environ, )
     res1 = p.stdin.write(bytes("SELECT VDISK FILE=" + vhd_file_path + "\n", 'utf-8'))
     res1 = p.stdin.write(bytes("ATTACH VDISK\n", 'utf-8'))
     res1 = p.stdin.write(bytes("LIST VOLUME\n", 'utf-8'))
     stdout, stderr = p.communicate()
     #output = stdout.decode('utf-8', errors='ignore')
-    output = stdout.decode('big5', errors='ignore')
+    output = stdout.decode(ret_locale_lang, errors='ignore')
     last_volume_index = parse_last_volume_number(output)
     p.kill()
     return last_volume_index
 
 def diskpart_mount_as_folder(last_volume_index:int, mount_point_path:str) -> bool:
+    ret_locale_lang = get_locale_lang()
     p = subprocess.Popen("diskpart", stdin=subprocess.PIPE, stdout=subprocess.PIPE, env=os.environ, )
     res1 = p.stdin.write(bytes("SELECT VDISK FILE=" + vhd_file_path + "\n", 'utf-8'))
     res1 = p.stdin.write(bytes("ATTACH VDISK\n", 'utf-8'))
     res1 = p.stdin.write(bytes("SELECT VOLUME " + str(last_volume_index) + "\n", 'utf-8'))
     res1 = p.stdin.write(bytes("ASSIGN MOUNT=" + mount_point_path + "\n", 'utf-8'))
     stdout, stderr = p.communicate()
-    output = stdout.decode('big5', errors='ignore')
+    output = stdout.decode(ret_locale_lang, errors='ignore')
     #output = stdout.decode('utf-8', errors='ignore')
     print(output)
 
