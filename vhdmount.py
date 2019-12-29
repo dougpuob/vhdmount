@@ -1,18 +1,16 @@
 import time
 import os
 import re
+import argparse
 import subprocess
-from pathlib import Path
-
-
-text = b'''
-hello world
-this is a test
-goodbye
-'''
 
 def parse_last_volume_number(diskpart_message) -> int:
-    match = re.findall(r'Volume\s(\d)', diskpart_message)
+    new_diskpart_message = diskpart_message
+    new_diskpart_message = new_diskpart_message.replace('磁碟區'       , 'Volume') # Taiwan
+    new_diskpart_message = new_diskpart_message.replace('磁碟区'       , 'Volume') # China
+    new_diskpart_message = new_diskpart_message.replace('양'           , 'Volume') # Korea
+    new_diskpart_message = new_diskpart_message.replace('ボリューム'   , 'Volume') # Japan
+    match = re.findall(r'Volume\s(\d)', new_diskpart_message)
     max_numb = 0
     if len(match) > 0:
         max_numb = match[len(match)-1]
@@ -23,8 +21,9 @@ def diskpart_attach_vdisk(vhd_file_path:str) -> int:
     res1 = p.stdin.write(bytes("SELECT VDISK FILE=" + vhd_file_path + "\n", 'utf-8'))
     res1 = p.stdin.write(bytes("ATTACH VDISK\n", 'utf-8'))
     res1 = p.stdin.write(bytes("LIST VOLUME\n", 'utf-8'))
-    stdout, stderr = p.communicate(text)
-    output = stdout.decode('utf-8')
+    stdout, stderr = p.communicate()
+    #output = stdout.decode('utf-8', errors='ignore')
+    output = stdout.decode('big5', errors='ignore')
     last_volume_index = parse_last_volume_number(output)
     p.kill()
     return last_volume_index
@@ -33,10 +32,11 @@ def diskpart_mount_as_folder(last_volume_index:int, mount_point_path:str) -> boo
     p = subprocess.Popen("diskpart", stdin=subprocess.PIPE, stdout=subprocess.PIPE, env=os.environ, )
     res1 = p.stdin.write(bytes("SELECT VDISK FILE=" + vhd_file_path + "\n", 'utf-8'))
     res1 = p.stdin.write(bytes("ATTACH VDISK\n", 'utf-8'))
-    res1 = p.stdin.write(bytes("SELECT VOLUME " + last_volume_index + "\n", 'utf-8'))
+    res1 = p.stdin.write(bytes("SELECT VOLUME " + str(last_volume_index) + "\n", 'utf-8'))
     res1 = p.stdin.write(bytes("ASSIGN MOUNT=" + mount_point_path + "\n", 'utf-8'))
     stdout, stderr = p.communicate()
-    output = stdout.decode('utf-8')
+    output = stdout.decode('big5', errors='ignore')
+    #output = stdout.decode('utf-8', errors='ignore')
     print(output)
 
     p.kill()
@@ -44,20 +44,59 @@ def diskpart_mount_as_folder(last_volume_index:int, mount_point_path:str) -> boo
 
 
 if __name__ == '__main__':
-    curr_path = os.path.dirname(os.path.abspath(__file__))
-    vhd_file_path = os.path.join(curr_path, "sample.vhd")
-    mount_point_folder_path = os.path.join(curr_path, "mount-point")
 
-    try:
-        os.rmdir(mount_point_folder_path)
-    except:
-        print("an exception")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-source'   , help='aaaaaaaaaaaaaaaaaaaaaaa', required=True)
+    parser.add_argument('-folder'   , help='aaaaaaaaaaaaaaaaaaaaaaa', dest='folder')
+    parser.add_argument('-drive '   , help='aaaaaaaaaaaaaaaaaaaaaaa', dest='drive')
+    parser.add_argument('-mount '   , help='aaaaaaaaaaaaaaaaaaaaaaa', dest='mount')
+    parser.add_argument('-unmount ' , help='aaaaaaaaaaaaaaaaaaaaaaa', dest='unmount')
 
-    if not os.path.exists(mount_point_folder_path):
-        os.mkdir(mount_point_folder_path)
+    #args = parser.parse_args()
+    args = parser.parse_args()
 
-    if os.path.exists(vhd_file_path):
-        last_volume_index = diskpart_attach_vdisk(vhd_file_path)
-        time.sleep(.5)
-        result = diskpart_mount_as_folder(last_volume_index, mount_point_folder_path)
-        print(result)
+    if None == args.source:
+        exit(1)
+
+    if not os.path.exists(args.source):
+        exit(2)
+
+    input_source = args.source.lower()
+    if not input_source.endswith('.vhd') and not input_source.endswith('.vhdx'):
+        exit(3)
+
+    if not args.folder and  not args.drive:
+        exit(4)
+
+    # either, can't be both
+    if args.folder and args.drive:
+        exit(5)
+
+    vhd_file_path = os.path.abspath(args.source)
+    folder_path   = os.path.abspath(args.folder)
+    last_volume_index = diskpart_attach_vdisk(vhd_file_path)
+
+    print('VHD    = ' + str(vhd_file_path))
+    print('Folder = ' + str(folder_path))
+    print('Drive  = ' + str(args.drive))
+    print('Volume = ' + str(last_volume_index))
+
+    ret_status = False
+    if args.folder:
+        try:
+            os.rmdir(folder_path)
+        except:
+            print("an exception")
+
+        if not os.path.exists(folder_path):
+            os.mkdir(folder_path)
+
+        ret_status = True
+
+    elif args.drive:
+        ret_status = False
+
+    if ret_status:
+        ret_status = diskpart_mount_as_folder(last_volume_index, folder_path)
+
+    print(ret_status)
