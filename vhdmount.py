@@ -142,16 +142,16 @@ if __name__ == '__main__':
         folder_path = os.path.abspath(args.folder)
 
     vhd_file_path = os.path.abspath(args.source)
-    last_volume_index = diskpart_attach_vdisk(vhd_file_path)
+    last_volume_index = diskpart_attach_vdisk(vhd_file_path, args.readonly)
 
-    print('Mount   = ' + str(args.mount))
-    print('Unmount = ' + str(args.unmount))
-    print('VHD     = ' + str(vhd_file_path))
-    print('Folder  = ' + str(folder_path))
-    print('Drive   = ' + str(args.drive))
-    print('Volume  = ' + str(last_volume_index))
-    print('Debug   = ' + str(args.debug))
-    print('ReadOnly= ' + str(args.readonly))
+    print('Mount    = ' + str(args.mount))
+    print('Unmount  = ' + str(args.unmount))
+    print('VHD      = ' + str(vhd_file_path))
+    print('Folder   = ' + str(folder_path))
+    print('Drive    = ' + str(args.drive))
+    print('Volume   = ' + str(last_volume_index))
+    print('Debug    = ' + str(args.debug))
+    print('ReadOnly = ' + str(args.readonly))
 
     ret_status = False
     if args.folder:
@@ -174,7 +174,7 @@ if __name__ == '__main__':
     if ret_status:
         if args.mount:
             if args.folder:
-                ret_status = diskpart_mount_as_folder(last_volume_index, folder_path)
+                ret_status = diskpart_mount_as_folder(last_volume_index, folder_path, args.readonly)
             elif args.disk:
                 print('-drive option is supported now.')
         elif args.unmount:
