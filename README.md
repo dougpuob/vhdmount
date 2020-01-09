@@ -13,7 +13,7 @@ The `cmd-test.cmd` file is a test and also a demonstration. Please run it first.
 1. Launch a console with Administrator.
 2. Go to the project repo.
 3. Run `cmd-test.cmd`
-4. Check the result is "PASS"
+4. Check the result is "PASS"  
    ![](https://i.imgur.com/locyv8t.png)
 
 
