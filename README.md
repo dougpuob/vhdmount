@@ -6,6 +6,24 @@ This Python program can mount/unmount VHD or VHDX virtual image as a drive or a 
 
 Welcome to use my code to save your time too, you can do anything you like with my source code. File bugs to me if you found something wrong, if you are more aggressive PR is appreciate.
 
+
+## Run Test
+The `cmd-test.cmd` file is a test and also a demonstration. Please run it first.
+
+1. Launch a console with Administrator.
+2. Go to the project repo.
+3. Run `cmd-test.cmd`
+4. Check the result is "PASS"
+   ![](https://i.imgur.com/locyv8t.png)
+
+
+## Script Files
+- cmd-test.cmd
+- cmd-extract-vhd.cmd
+- cmd-mount.cmd
+- cmd-unmount.cmd
+
+
 ## Usage  
 There is a `vhdfile-10mb.vhd` VHD image in the `vhdfile-10mb.zip` file. You need to unzip it first to the project root folder. Then try the following examples.
 
